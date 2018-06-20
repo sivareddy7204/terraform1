@@ -1,0 +1,65 @@
+
+variable admin_password {}
+variable ami {}
+variable instance_type {}
+variable key_name {}
+variable user_data_path {}
+
+# Default security group to access the instances via WinRM over HTTP and HTTPS
+resource "aws_security_group" "aws2" {
+  name        = "terraform_example1"
+  description = "Used in the terraform"
+
+  # WinRM access from anywhere
+  ingress {
+    from_port   = 3365
+    to_port     = 6000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # outbound internet access
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+
+provider "aws" {
+  region     = "us-east-1"
+}
+
+data "template_file" "init" {
+    template = "${file("${var.user_data_path}")}"
+
+    vars {
+      admin_password = "${var.admin_password}"
+    }
+}
+
+
+
+
+resource "aws_instance" "ec2" {
+  ami           = "${var.ami}"
+  instance_type = "${var.instance_type}"
+  key_name      = "${var.key_name}"
+  user_data     = "${data.template_file.init.rendered}"
+ security_groups= ["terraform_example1"]
+  connection {
+    type = "winrm"
+    user = "Administrator"
+    password = "${var.admin_password}"
+  }
+  tags {
+    Srv = "windows"
+  }
+
+}
+
+
+

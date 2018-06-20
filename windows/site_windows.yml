@@ -1,0 +1,7 @@
+---
+- name: Test
+  hosts: tag_Srv_windows
+  gather_facts: false
+  roles:
+   - webserver
+   - windows_user
